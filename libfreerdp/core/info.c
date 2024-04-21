@@ -1327,6 +1327,10 @@ static BOOL rdp_write_logon_info_v1(wStream* s, logon_info* info)
 		return FALSE;
 
 	/* domain */
+	WINPR_ASSERT(info);
+	if (!info->domain || !info->username)
+		return FALSE;
+
 	ilen = ConvertToUnicode(CP_UTF8, 0, info->domain, -1, &wString, 0);
 
 	if (ilen < 0)
