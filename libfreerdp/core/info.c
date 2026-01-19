@@ -1368,7 +1368,7 @@ static BOOL rdp_write_logon_info_v1(wStream* s, logon_info* info)
 	return TRUE;
 }
 
-static BOOL rdp_write_logon_info_v2(wStream* s, logon_info* info)
+static BOOL rdp_write_logon_info_v2(wStream* s, const logon_info* info)
 {
 	UINT32 Size = 2 + 4 + 4 + 4 + 4 + 558;
 	size_t domainLen, usernameLen;
@@ -1381,11 +1381,13 @@ static BOOL rdp_write_logon_info_v2(wStream* s, logon_info* info)
 	Stream_Write_UINT16(s, SAVE_SESSION_PDU_VERSION_ONE);
 	Stream_Write_UINT32(s, Size);
 	Stream_Write_UINT32(s, info->sessionId);
-	domainLen = strlen(info->domain);
+	if (info->domain)
+		domainLen = strlen(info->domain);
 	if (domainLen > UINT32_MAX)
 		return FALSE;
 	Stream_Write_UINT32(s, (UINT32)(domainLen + 1) * 2);
-	usernameLen = strlen(info->username);
+	if (info->username)
+		usernameLen = strlen(info->username);
 	if (usernameLen > UINT32_MAX)
 		return FALSE;
 	Stream_Write_UINT32(s, (UINT32)(usernameLen + 1) * 2);
@@ -1464,6 +1466,7 @@ BOOL rdp_send_save_session_info(rdpContext* context, UINT32 type, void* data)
 {
 	wStream* s;
 	BOOL status;
+	WINPR_ASSERT(context);
 	rdpRdp* rdp = context->rdp;
 	s = rdp_data_pdu_init(rdp);
 
