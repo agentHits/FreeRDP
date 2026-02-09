@@ -259,11 +259,10 @@ void xf_rail_paint(xfContext* xfc, INT32 uleft, INT32 utop, UINT32 uright, UINT3
 static BOOL xf_rail_window_common(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
                                   const WINDOW_STATE_ORDER* windowState)
 {
-	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*)context;
 	UINT32 fieldFlags = orderInfo->fieldFlags;
 	BOOL position_or_size_updated = FALSE;
-	appWindow = xf_rail_get_window(xfc, orderInfo->windowId);
+	xfAppWindow* appWindow = xf_rail_get_window(xfc, orderInfo->windowId);
 
 	if (fieldFlags & WINDOW_ORDER_STATE_NEW)
 	{
@@ -308,10 +307,7 @@ static BOOL xf_rail_window_common(rdpContext* context, const WINDOW_ORDER_INFO* 
 		}
 
 		if (!appWindow->title)
-		{
-			free(appWindow);
 			return FALSE;
-		}
 
 		xf_AppWindowInit(xfc, appWindow);
 	}
