@@ -492,6 +492,18 @@ static BOOL clear_decompress_subcodecs_data(CLEAR_CONTEXT* clear, wStream* s,
 
 		nXDstRel = nXDst + xStart;
 		nYDstRel = nYDst + yStart;
+		if (1ull * nXDstRel + width > nDstWidth)
+		{
+			WLog_ERR(TAG, "nXDstRel %" PRIu32 " + width %" PRIu16 " > nDstWidth %" PRIu32 "",
+			         nXDstRel, width, nDstWidth);
+			return FALSE;
+		}
+		if (1ull * nYDstRel + height > nDstHeight)
+		{
+			WLog_ERR(TAG, "nYDstRel %" PRIu32 " + height %" PRIu16 " > nDstHeight %" PRIu32 "",
+			         nYDstRel, height, nDstHeight);
+			return FALSE;
+		}
 
 		if (width > nWidth)
 		{
