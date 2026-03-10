@@ -337,6 +337,21 @@ static UINT16 dsp_decode_ima_adpcm_sample(ADPCM* adpcm, unsigned int channel, BY
 	return (UINT16)d;
 }
 
+static BOOL valid_ima_adpcm_format(const FREERDP_DSP_CONTEXT* context)
+{
+	if (!context)
+		return FALSE;
+	if (context->format.wFormatTag != WAVE_FORMAT_DVI_ADPCM)
+		return FALSE;
+	if (context->format.nBlockAlign <= 4ULL)
+		return FALSE;
+	if (context->format.nChannels < 1)
+		return FALSE;
+	if (context->format.wBitsPerSample == 0)
+		return FALSE;
+	return TRUE;
+}
+
 static BOOL freerdp_dsp_decode_ima_adpcm(FREERDP_DSP_CONTEXT* context, const BYTE* src, size_t size,
                                          wStream* out)
 {
@@ -348,6 +363,9 @@ static BOOL freerdp_dsp_decode_ima_adpcm(FREERDP_DSP_CONTEXT* context, const BYT
 	const UINT32 block_size = context->format.nBlockAlign;
 	const UINT32 channels = context->format.nChannels;
 	size_t i;
+
+	if (!valid_ima_adpcm_format(context))
+		return FALSE;
 
 	if (!Stream_EnsureCapacity(out, out_size))
 		return FALSE;
@@ -477,6 +495,21 @@ static BOOL freerdp_dsp_encode_gsm610(FREERDP_DSP_CONTEXT* context, const BYTE* 
 #endif
 
 #if defined(WITH_LAME)
+static BOOL valid_mp3_format(const FREERDP_DSP_CONTEXT* context)
+{
+	if (!context)
+		return FALSE;
+	if (context->format.wFormatTag != WAVE_FORMAT_MPEGLAYER3)
+		return FALSE;
+	if (context->format.nChannels < 1)
+		return FALSE;
+	if (context->format.wBitsPerSample == 0)
+		return FALSE;
+	if (context->format.nSamplesPerSec == 0)
+		return FALSE;
+	return TRUE;
+}
+
 static BOOL freerdp_dsp_decode_mp3(FREERDP_DSP_CONTEXT* context, const BYTE* src, size_t size,
                                    wStream* out)
 {
@@ -486,6 +519,9 @@ static BOOL freerdp_dsp_decode_mp3(FREERDP_DSP_CONTEXT* context, const BYTE* src
 	size_t buffer_size;
 
 	if (!context || !src || !out)
+		return FALSE;
+
+	if (!valid_mp3_format(context))
 		return FALSE;
 
 	buffer_size = 2 * context->format.nChannels * context->format.nSamplesPerSec;
@@ -520,6 +556,9 @@ static BOOL freerdp_dsp_encode_mp3(FREERDP_DSP_CONTEXT* context, const BYTE* src
 	int rc;
 
 	if (!context || !src || !out)
+		return FALSE;
+
+	if (!valid_mp3_format(context))
 		return FALSE;
 
 	samples_per_channel = size / context->format.nChannels / context->format.wBitsPerSample / 8;
@@ -728,6 +767,8 @@ static BOOL freerdp_dsp_encode_ima_adpcm(FREERDP_DSP_CONTEXT* context, const BYT
 	size_t align;
 	out_size = size / 2;
 
+	if (!valid_ima_adpcm_format(context))
+		return FALSE;
 	if (!Stream_EnsureRemainingCapacity(out, size))
 		return FALSE;
 
@@ -823,11 +864,28 @@ static INLINE INT16 freerdp_dsp_decode_ms_adpcm_sample(ADPCM* adpcm, BYTE sample
 	return (INT16)presample;
 }
 
+static BOOL valid_ms_adpcm_format(const FREERDP_DSP_CONTEXT* context)
+{
+	if (!context)
+		return FALSE;
+	if (context->format.wFormatTag != WAVE_FORMAT_ADPCM)
+		return FALSE;
+	if (context->format.nBlockAlign <= 4ULL)
+		return FALSE;
+	if (context->format.nChannels < 1)
+		return FALSE;
+	if (context->format.wBitsPerSample == 0)
+		return FALSE;
+	return TRUE;
+}
+
 static BOOL freerdp_dsp_decode_ms_adpcm(FREERDP_DSP_CONTEXT* context, const BYTE* src, size_t size,
                                         wStream* out)
 {
 	BYTE* dst;
 	BYTE sample;
+	if (!valid_ms_adpcm_format(context))
+		return FALSE;
 	const size_t out_size = size * 4;
 	const UINT32 channels = context->format.nChannels;
 	const UINT32 block_size = context->format.nBlockAlign;
@@ -958,6 +1016,9 @@ static BOOL freerdp_dsp_encode_ms_adpcm(FREERDP_DSP_CONTEXT* context, const BYTE
 	size_t out_size;
 	const size_t step = 8 + ((context->format.nChannels > 1) ? 4 : 0);
 	out_size = size / 2;
+
+	if (!valid_ms_adpcm_format(context))
+		return FALSE;
 
 	if (!Stream_EnsureRemainingCapacity(out, size))
 		return FALSE;
@@ -1318,6 +1379,28 @@ BOOL freerdp_dsp_context_reset(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT*
 		return FALSE;
 
 	context->format = *targetFormat;
+
+	switch (context->format.wFormatTag)
+	{
+#if defined(WITH_LAME)
+		case WAVE_FORMAT_MPEGLAYER3:
+			if (!valid_mp3_format(context))
+				return FALSE;
+			break;
+#endif
+		case WAVE_FORMAT_ADPCM:
+			if (!valid_ms_adpcm_format(context))
+				return FALSE;
+			break;
+		case WAVE_FORMAT_DVI_ADPCM:
+			if (!valid_ima_adpcm_format(context))
+				return FALSE;
+			break;
+		default:
+			break;
+	}
+
+
 #if defined(WITH_FAAD2)
 	context->faadSetup = FALSE;
 #endif
