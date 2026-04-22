@@ -451,13 +451,20 @@ BOOL nsc_process_message(NSC_CONTEXT* context, UINT16 bpp, UINT32 width, UINT32 
 	if (!context || !data || !pDstData)
 		return FALSE;
 
-	s = Stream_New((BYTE*)data, length);
+	if (nXDst > nWidth)
+		return FALSE;
+	if (nYDst > nHeight)
+		return FALSE;
 
+	s = Stream_New((BYTE*)data, length);
 	if (!s)
 		return FALSE;
 
+	const UINT32 minStride = nWidth * GetBytesPerPixel(DstFormat);
 	if (nDstStride == 0)
-		nDstStride = nWidth * GetBytesPerPixel(DstFormat);
+		nDstStride = minStride;
+	if (nDstStride < minStride)
+		return FALSE;
 
 	switch (bpp)
 	{
@@ -515,7 +522,15 @@ BOOL nsc_process_message(NSC_CONTEXT* context, UINT16 bpp, UINT32 width, UINT32 
 			return FALSE;
 	}
 
-	if (!freerdp_image_copy(pDstData, DstFormat, nDstStride, nXDst, nYDst, width, height,
+	UINT32 cwidth = width;
+	if (1ull * nXDst + width > nWidth)
+		cwidth = nWidth - nXDst;
+
+	UINT32 cheight = height;
+	if (1ull * nYDst + height > nHeight)
+		cheight = nHeight - nYDst;
+
+	if (!freerdp_image_copy(pDstData, DstFormat, nDstStride, nXDst, nYDst, cwidth, cheight,
 	                        context->BitmapData, PIXEL_FORMAT_BGRA32, 0, 0, 0, NULL, flip))
 		return FALSE;
 
