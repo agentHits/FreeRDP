@@ -626,9 +626,9 @@ BOOL planar_decompress(BITMAP_PLANAR_CONTEXT* planar, const BYTE* pSrcData, UINT
 
 	srcp = pSrcData;
 
-	if (!pSrcData)
+	if (!pSrcData || (SrcSize < 1))
 	{
-		WLog_ERR(TAG, "Invalid argument pSrcData=NULL");
+		WLog_ERR(TAG, "Invalid argument pSrcData=%p [size=%" PRIu32 "]", pSrcData, SrcSize);
 		return FALSE;
 	}
 
