@@ -991,22 +991,34 @@ static BOOL clear_decompress_glyph_data(CLEAR_CONTEXT* clear, wStream* s, UINT32
 	{
 		const UINT32 bpp = GetBytesPerPixel(clear->format);
 		CLEAR_GLYPH_ENTRY* glyphEntry = &(clear->GlyphCache[glyphIndex]);
-		glyphEntry->count = nWidth * nHeight;
-
-		if (glyphEntry->count > glyphEntry->size)
+		const size_t count = 1ull * nWidth * nHeight;
+		const size_t hlimit = SIZE_MAX / ((nWidth > 0) ? nWidth : 1);
+		if ((nWidth == 0) || (nHeight == 0) || (hlimit < nHeight))
 		{
-			BYTE* tmp;
-			tmp = realloc(glyphEntry->pixels, 1ull * glyphEntry->count * bpp);
+			WLog_ERR(TAG,
+			         "CLEARCODEC_FLAG_GLYPH_INDEX: invalid dimensions nWidth=%" PRIu32
+			         " nHeight=%" PRIu32,
+			         nWidth, nHeight);
+			return FALSE;
+		}
+
+		if (count > glyphEntry->size)
+		{
+			BYTE* tmp = realloc(glyphEntry->pixels, count * bpp);
 
 			if (!tmp)
 			{
-				WLog_ERR(TAG, "glyphEntry->pixels realloc %" PRIu32 " failed!",
-				         glyphEntry->count * bpp);
+				WLog_ERR(TAG, "glyphEntry->pixels realloc %zu failed!", count * bpp);
 				return FALSE;
 			}
 
+			glyphEntry->count = (UINT32)count;
 			glyphEntry->size = glyphEntry->count;
 			glyphEntry->pixels = (UINT32*)tmp;
+		}
+		else
+		{
+			glyphEntry->count = (UINT32)count;
 		}
 
 		if (!glyphEntry->pixels)
