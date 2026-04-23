@@ -200,6 +200,8 @@ BOOL rts_read_common_pdu_header(wStream* s, rpcconn_common_hdr_t* header)
 
 	if (header->frag_length < sizeof(rpcconn_common_hdr_t))
 		return FALSE;
+	if (header->auth_length > header->frag_length - 8ull)
+		return FALSE;
 
 	left = Stream_GetRemainingLength(s);
 	if (left < header->frag_length - sizeof(rpcconn_common_hdr_t))
