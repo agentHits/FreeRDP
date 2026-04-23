@@ -577,7 +577,13 @@ static BOOL xf_clipboard_changed(xfClipboard* clipboard, const CLIPRDR_FORMAT* f
 
 static void xf_clipboard_formats_free(xfClipboard* clipboard)
 {
+	WINPR_ASSERT(clipboard);
+
+	/* Synchronize RDP/X11 thread with channel thread */
+	xf_lock_x11(clipboard->xfc);
 	xf_cliprdr_free_formats(clipboard->lastSentFormats, clipboard->lastSentNumFormats);
+	xf_unlock_x11(clipboard->xfc);
+
 	clipboard->lastSentFormats = NULL;
 	clipboard->lastSentNumFormats = 0;
 }
